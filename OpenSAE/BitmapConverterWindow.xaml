@@ -147,6 +147,11 @@
         </DockPanel>
 
         <StackPanel DockPanel.Dock="Bottom">
+                <TextBlock
+                    Text="{Binding ErrorMessage}"
+                    Foreground="OrangeRed"
+                    TextWrapping="Wrap"
+                    Margin="8" />
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="5">
                 <TextBlock FontSize="24" FontWeight="Bold" TextAlignment="Center">
                     <Run Text="{Binding LayerCount, Mode=OneWay}" /> / 225 symbols (score: <Run Text="{Binding Score, Mode=OneWay, StringFormat={}{0:0.0000}}" />)
