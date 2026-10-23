@@ -382,8 +382,11 @@ namespace OpenSAE.Models
                     }
                     catch (Exception ex)
                     {
-                        ErrorMessage = "Unable to convert bitmap: " + ex.Message;
-                        IsLoading = false;
+                        _dispatcher.Invoke(() =>
+                        {
+                            ErrorMessage = "Unable to convert bitmap: " + ex.Message;
+                            IsLoading = false;
+                        });
                     }
                 }
 
