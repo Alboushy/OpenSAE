@@ -1,0 +1,58 @@
+name: Build OpenSAE with bitmap error diagnostics
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Get OpenSAE source
+        uses: actions/checkout@v4
+
+      - name: Install .NET 6 SDK on build machine
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Show bitmap conversion errors in a popup
+        shell: pwsh
+        run: |
+          $path = 'OpenSAE/Models/BitmapConverterModel.cs'
+          $source = [System.IO.File]::ReadAllText($path)
+          $original = 'ErrorMessage = "Unable to convert bitmap: " + ex.Message;'
+          $replacement = @'
+          _dispatcher.Invoke(() =>
+          {
+              ErrorMessage = "Unable to convert bitmap: " + ex.Message;
+              IsLoading = false;
+              System.Windows.MessageBox.Show(
+                  ex.ToString(),
+                  "OpenSAE bitmap conversion error",
+                  System.Windows.MessageBoxButton.OK,
+                  System.Windows.MessageBoxImage.Error);
+          });
+          '@
+          if (-not $source.Contains($original)) {
+              throw 'Bitmap conversion error handler was not found in this source revision.'
+          }
+          $source = $source.Replace($original, $replacement.Trim())
+          [System.IO.File]::WriteAllText($path, $source)
+
+      - name: Compile portable Windows app
+        shell: pwsh
+        run: |
+          dotnet publish OpenSAE/OpenSAE.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=false `
+            -p:PublishReadyToRun=false `
+            --output published
+
+      - name: Make downloadable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSAE-Bitmap-Diagnostics-Win64
+          path: published/
+          if-no-files-found: error
